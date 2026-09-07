@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Virtual environments
+blood_cell_env/
+venv/
+.venv/
+env/
+
+# Dataset (extracted folder and archive are not committed)
+bloodcells_dataset/
+bloodcells_dataset.zip
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary / logs
+*.log
+tmp/
