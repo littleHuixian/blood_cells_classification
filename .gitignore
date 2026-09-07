@@ -25,3 +25,7 @@ Thumbs.db
 # Temporary / logs
 *.log
 tmp/
+
+# Qt demo build and local IDE metadata
+five_classification_demo/build/
+five_classification_demo/.qtcreator/
