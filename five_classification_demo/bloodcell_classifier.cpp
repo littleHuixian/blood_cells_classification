@@ -22,7 +22,11 @@
 #endif
 #endif
 
+#if defined(__APPLE__)
+#include <onnxruntime_cxx_api.h>
+#else
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#endif
 
 namespace {
 
@@ -132,9 +136,13 @@ bool BloodCellClassifier::initialize(const QString &modelPath)
         Ort::SessionOptions options;
         options.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
 
-        const std::wstring widePath = modelPath.toStdWString();
+#if defined(_WIN32)
+        const std::wstring nativeModelPath = modelPath.toStdWString();
+#else
+        const std::string nativeModelPath = modelPath.toStdString();
+#endif
         d->session = std::make_unique<Ort::Session>(
-                d->env, widePath.c_str(), options);
+                d->env, nativeModelPath.c_str(), options);
 
         Ort::AllocatorWithDefaultOptions allocator;
         auto inputName = d->session->GetInputNameAllocated(0, allocator);
@@ -142,13 +150,13 @@ bool BloodCellClassifier::initialize(const QString &modelPath)
         auto outputName = d->session->GetOutputNameAllocated(0, allocator);
         d->outputName = outputName.get();
 
-        auto inputInfo =
-                d->session->GetInputTypeInfo(0).GetTensorTypeAndShapeInfo();
-        const auto inputShape = inputInfo.GetShape();
+        Ort::TypeInfo inputTypeInfo = d->session->GetInputTypeInfo(0);
+        const auto inputShape =
+                inputTypeInfo.GetTensorTypeAndShapeInfo().GetShape();
         // 输出类别数 = logits 的最后一维
-        auto outputInfo =
-                d->session->GetOutputTypeInfo(0).GetTensorTypeAndShapeInfo();
-        const auto outputShape = outputInfo.GetShape();
+        Ort::TypeInfo outputTypeInfo = d->session->GetOutputTypeInfo(0);
+        const auto outputShape =
+                outputTypeInfo.GetTensorTypeAndShapeInfo().GetShape();
         const int outputCount = outputShape.empty()
                 ? 0
                 : static_cast<int>(outputShape.back());

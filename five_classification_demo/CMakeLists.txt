@@ -3,26 +3,48 @@ project(five_classification_demo LANGUAGES CXX)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 
-# ONNX Runtime 1.16.3 本机安装目录
-set(ONNXRUNTIME_DIR
-    "D:/onnxruntime-win-x64-1.16.3"
-    CACHE PATH "ONNX Runtime installation root")
+if(APPLE)
+    # macOS：使用项目内置的官方 arm64 ONNX Runtime
+    set(ONNXRUNTIME_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/macos"
+        CACHE PATH "ONNX Runtime installation root" FORCE)
+    set(OpenCV_DIR
+        "/opt/opencv/lib/cmake/opencv5"
+        CACHE PATH "Path containing OpenCVConfig.cmake" FORCE)
+elseif(WIN32)
+    # Windows：继续使用原工程的本机 ONNX Runtime / OpenCV
+    set(ONNXRUNTIME_DIR
+        "D:/onnxruntime-win-x64-1.16.3"
+        CACHE PATH "ONNX Runtime installation root")
+    set(OpenCV_DIR
+        "D:/OpenCV453/build/install/x64/mingw/lib"
+        CACHE PATH "Path containing OpenCVConfig.cmake")
+else()
+    message(FATAL_ERROR "five_classification_demo only supports macOS and Windows")
+endif()
 
-# OpenCV 4.5.3 本机安装目录（MinGW 64-bit 构建）
-set(OpenCV_DIR
-    "D:/OpenCV453/build/install/x64/mingw/lib"
-    CACHE PATH "Path containing OpenCVConfig.cmake")
-find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc imgcodecs)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
 
-# ONNX Runtime 动态库：运行用 D 盘 DLL，链接用本工程内生成的 MinGW 导入库
+# ONNX Runtime 动态库：macOS 直接链接项目内 dylib，
+# Windows 运行用 D 盘 DLL，链接用本工程内生成的 MinGW 导入库
 add_library(onnxruntime SHARED IMPORTED GLOBAL)
-set_target_properties(onnxruntime PROPERTIES
-    IMPORTED_LOCATION "${ONNXRUNTIME_DIR}/lib/onnxruntime.dll"
-    IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/lib/libonnxruntime.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/include"
-)
+if(APPLE)
+    set_target_properties(onnxruntime PROPERTIES
+        IMPORTED_LOCATION "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib"
+        INTERFACE_INCLUDE_DIRECTORIES "${ONNXRUNTIME_DIR}/include"
+    )
+elseif(WIN32)
+    set_target_properties(onnxruntime PROPERTIES
+        IMPORTED_LOCATION "${ONNXRUNTIME_DIR}/lib/onnxruntime.dll"
+        IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/lib/libonnxruntime.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/include"
+    )
+endif()
 
 qt_standard_project_setup()
+
+# 让 images.qrc 真正被 rcc 编译进可执行文件
+set(CMAKE_AUTORCC ON)
 
 qt_add_executable(five_classification_demo
     WIN32 MACOSX_BUNDLE
@@ -32,13 +54,23 @@ qt_add_executable(five_classification_demo
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    images.qrc
 )
 
 target_include_directories(five_classification_demo
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/3rd/onnxruntime/include
         ${OpenCV_INCLUDE_DIRS}
 )
+
+if(APPLE)
+    target_compile_definitions(five_classification_demo PRIVATE
+        BLOOD_MODEL_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../models/best_blood_cell_model_ir9.onnx"
+    )
+    set_target_properties(five_classification_demo PROPERTIES
+        BUILD_RPATH "${ONNXRUNTIME_DIR}/lib"
+        INSTALL_RPATH "@loader_path/../Frameworks"
+    )
+endif()
 
 target_link_libraries(five_classification_demo
     PRIVATE

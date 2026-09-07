@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="identy.png">images/identy.png</file>
+        <file alias="refresh.png">images/refresh.png</file>
+    </qresource>
+</RCC>

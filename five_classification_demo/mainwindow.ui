@@ -11,7 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>血细胞五分类识别</string>
+  </property>
+  <property name="toolButtonStyle">
+   <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -19,24 +22,6 @@
      <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,2">
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QPushButton" name="btnOpenFile">
-            <property name="text">
-             <string>打开文件</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnRefresh">
-            <property name="text">
-             <string>刷新</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
@@ -72,7 +57,7 @@
      <x>0</x>
      <y>0</y>
      <width>987</width>
-     <height>25</height>
+     <height>33</height>
     </rect>
    </property>
   </widget>
@@ -87,17 +72,78 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="action_prediction"/>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <addaction name="action_open"/>
+   <addaction name="action_refresh"/>
+   <addaction name="action_recognize"/>
   </widget>
-  <action name="action_prediction">
+  <action name="action_open">
    <property name="text">
-    <string>预测</string>
+    <string>打开</string>
+   </property>
+   <property name="toolTip">
+    <string>打开图片文件</string>
+   </property>
+   <property name="statusTip">
+    <string>打开一张血细胞图片</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="action_refresh">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/icons/refresh.png</normaloff>:/icons/refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>刷新</string>
+   </property>
+   <property name="toolTip">
+    <string>刷新当前目录图片列表</string>
+   </property>
+   <property name="statusTip">
+    <string>重新扫描当前目录中的图片</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="action_recognize">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/icons/identy.png</normaloff>:/icons/identy.png</iconset>
+   </property>
+   <property name="text">
+    <string>识别</string>
+   </property>
+   <property name="toolTip">
+    <string>识别当前选中的图片</string>
+   </property>
+   <property name="statusTip">
+    <string>使用血细胞模型识别当前图片</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
  <connections/>
 </ui>

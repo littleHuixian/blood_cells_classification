@@ -5,6 +5,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
@@ -20,6 +21,7 @@
 #include <QStandardItemModel>
 #include <QStandardPaths>
 #include <QResizeEvent>
+#include <QStyle>
 #include <QTextCharFormat>
 #include <QTextCursor>
 
@@ -32,9 +34,13 @@ const char *kImageFilter =
         "图片文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp *.gif);;"
         "所有文件 (*.*)";
 
+#ifdef BLOOD_MODEL_PATH
+const char *kModelPath = BLOOD_MODEL_PATH;
+#else
 const char *kModelPath =
         "E:/PythonFiles/OpenCVCodes/blood_cells_classification/models/"
         "best_blood_cell_model_ir9.onnx";
+#endif
 
 const QStringList &imageNameFilters()
 {
@@ -102,19 +108,28 @@ MainWindow::MainWindow(QWidget *parent)
                                      | QPainter::SmoothPixmapTransform);
     ui->graphicsView->setBackgroundBrush(Qt::black);
 
-    connect(ui->btnOpenFile, &QPushButton::clicked,
+    // 打开动作使用系统标准图标，刷新/识别动作使用工程资源图标
+    ui->action_open->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+    ui->action_recognize->setEnabled(false);
+
+    connect(ui->action_open, &QAction::triggered,
             this, &MainWindow::onOpenFile);
-    connect(ui->btnRefresh, &QPushButton::clicked,
+    connect(ui->action_refresh, &QAction::triggered,
             this, &MainWindow::onRefresh);
-    connect(ui->lvFileName->selectionModel(), &QItemSelectionModel::currentChanged,
-            this, &MainWindow::onCurrentChanged);
-    connect(ui->action_prediction, &QAction::triggered,
+    connect(ui->action_recognize, &QAction::triggered,
             this, &MainWindow::onPredict);
+    connect(ui->lvFileName->selectionModel(), &QItemSelectionModel::currentChanged,
+            this, [this](const QModelIndex &current, const QModelIndex &) {
+                ui->action_recognize->setEnabled(current.isValid());
+                onCurrentChanged(current);
+            });
 
     if (!classifier->initialize(QString::fromUtf8(kModelPath))) {
-        ui->teShowInfo->setPlainText(
+        const QString errorText =
                 QStringLiteral("模型初始化失败：%1")
-                        .arg(classifier->lastError()));
+                        .arg(classifier->lastError());
+        qWarning().noquote() << errorText;
+        ui->teShowInfo->setPlainText(errorText);
     }
 
     // 启动时加载 exe 所在目录下的 test_images；不存在则自动创建
@@ -124,6 +139,8 @@ MainWindow::MainWindow(QWidget *parent)
     QDir().mkpath(testImagesDir);
     ui->leFilePath->setText(QDir::toNativeSeparators(testImagesDir));
     loadDirectory(testImagesDir, QString());
+    ui->action_recognize->setEnabled(
+            ui->lvFileName->currentIndex().isValid());
 }
 
 MainWindow::~MainWindow()
