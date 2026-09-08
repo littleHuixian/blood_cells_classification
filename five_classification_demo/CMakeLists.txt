@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.19)
 project(five_classification_demo LANGUAGES CXX)
 
+# 模型文件放在工程 model 目录，构建/安装时复制到程序目录
+set(BLOOD_MODEL_ONNX
+    "${CMAKE_CURRENT_SOURCE_DIR}/model/best_blood_cell_model_ir9.onnx")
+set(BLOOD_MODEL_DATA
+    "${CMAKE_CURRENT_SOURCE_DIR}/model/best_blood_cell_model_ir9.onnx.data")
+
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 
 if(APPLE)
@@ -63,9 +69,6 @@ target_include_directories(five_classification_demo
 )
 
 if(APPLE)
-    target_compile_definitions(five_classification_demo PRIVATE
-        BLOOD_MODEL_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../models/best_blood_cell_model_ir9.onnx"
-    )
     set_target_properties(five_classification_demo PROPERTIES
         BUILD_RPATH "${ONNXRUNTIME_DIR}/lib"
         INSTALL_RPATH "@loader_path/../Frameworks"
@@ -84,6 +87,14 @@ target_link_libraries(five_classification_demo
 if(WIN32)
     set(OPENCV_RUNTIME_DIR "D:/OpenCV453/build/install/x64/mingw/bin")
     add_custom_command(TARGET five_classification_demo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:five_classification_demo>/model"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${BLOOD_MODEL_ONNX}"
+            "$<TARGET_FILE_DIR:five_classification_demo>/model/best_blood_cell_model_ir9.onnx"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${BLOOD_MODEL_DATA}"
+            "$<TARGET_FILE_DIR:five_classification_demo>/model/best_blood_cell_model_ir9.onnx.data"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${ONNXRUNTIME_DIR}/lib/onnxruntime.dll"
             "$<TARGET_FILE_DIR:five_classification_demo>"
@@ -97,6 +108,13 @@ if(WIN32)
             "${OPENCV_RUNTIME_DIR}/libopencv_imgcodecs453.dll"
             "$<TARGET_FILE_DIR:five_classification_demo>"
         VERBATIM
+    )
+    install(FILES
+        "${ONNXRUNTIME_DIR}/lib/onnxruntime.dll"
+        "${OPENCV_RUNTIME_DIR}/libopencv_core453.dll"
+        "${OPENCV_RUNTIME_DIR}/libopencv_imgproc453.dll"
+        "${OPENCV_RUNTIME_DIR}/libopencv_imgcodecs453.dll"
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
 
@@ -112,3 +130,7 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+install(FILES ${BLOOD_MODEL_ONNX} ${BLOOD_MODEL_DATA}
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/model
+)

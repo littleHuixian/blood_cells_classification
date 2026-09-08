@@ -34,13 +34,12 @@ const char *kImageFilter =
         "图片文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp *.gif);;"
         "所有文件 (*.*)";
 
-#ifdef BLOOD_MODEL_PATH
-const char *kModelPath = BLOOD_MODEL_PATH;
-#else
-const char *kModelPath =
-        "E:/PythonFiles/OpenCVCodes/blood_cells_classification/models/"
-        "best_blood_cell_model_ir9.onnx";
-#endif
+const QString &modelFileName()
+{
+    static const QString fileName =
+            QStringLiteral("best_blood_cell_model_ir9.onnx");
+    return fileName;
+}
 
 const QStringList &imageNameFilters()
 {
@@ -124,7 +123,19 @@ MainWindow::MainWindow(QWidget *parent)
                 onCurrentChanged(current);
             });
 
-    if (!classifier->initialize(QString::fromUtf8(kModelPath))) {
+#ifdef Q_OS_MACOS
+    // macOS .app 包内模型放在 Contents/Resources/model
+    const QString modelDir =
+            QDir(QCoreApplication::applicationDirPath())
+                    .filePath(QStringLiteral("../Resources/model"));
+#else
+    const QString modelDir =
+            QDir(QCoreApplication::applicationDirPath())
+                    .filePath(QStringLiteral("model"));
+#endif
+    const QString modelPath = QDir(modelDir).filePath(modelFileName());
+
+    if (!classifier->initialize(modelPath)) {
         const QString errorText =
                 QStringLiteral("模型初始化失败：%1")
                         .arg(classifier->lastError());
